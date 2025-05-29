@@ -1,0 +1,111 @@
+trigger:
+  branches:
+    include:
+      - main
+      - dev
+      - feature/*
+
+variables:
+  buildConfiguration: 'Release'
+  solution: 'EventDrivenMicroservicesSolution.sln'
+
+pool:
+  vmImage: 'windows-latest'
+
+stages:
+# ------------------------
+# 🧱 BUILD STAGE
+# ------------------------
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+    - job: BuildJob
+      displayName: 'Build Solution'
+      steps:
+        - task: UseDotNet@2
+          displayName: 'Use .NET SDK'
+          inputs:
+            packageType: 'sdk'
+            version: '9.x'
+            installationPath: $(Agent.ToolsDirectory)/dotnet
+
+        - task: SonarCloudPrepare@3
+          displayName: 'Prepare SonarCloud Analysis'
+          inputs:
+            SonarCloud: 'SonarCloud'
+            organization: '$(SONAR_ORGANIZATION)'
+            scannerMode: 'dotnet'
+            projectKey: '$(SONAR_PROJECT_KEY)'
+            projectName: 'EventDrivenMicroservicesSolution'
+            extraProperties: |
+              sonar.exclusions=**/bin/**,**/obj/**
+              sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/TestResults/coverage.cobertura.xml
+
+        - task: DotNetCoreCLI@2
+          displayName: 'Restore NuGet packages'
+          inputs:
+            command: 'restore'
+            projects: '$(solution)'
+
+        - task: DotNetCoreCLI@2
+          displayName: 'Build Solution'
+          inputs:
+            command: 'build'
+            projects: '$(solution)'
+            arguments: '--configuration $(buildConfiguration)'
+
+# ------------------------
+# ✅ TEST STAGE
+# ------------------------
+- stage: Test
+  displayName: 'Test & Code Analysis Stage'
+  dependsOn: Build
+  jobs:
+    - job: TestJob
+      displayName: 'Run Tests and Code Analysis'
+      steps:
+        - task: UseDotNet@2
+          displayName: 'Use .NET SDK'
+          inputs:
+            packageType: 'sdk'
+            version: '9.x'
+            installationPath: $(Agent.ToolsDirectory)/dotnet
+
+        - task: DotNetCoreCLI@2
+          displayName: 'Run Tests with Code Coverage'
+          inputs:
+            command: 'test'
+            projects: '**/tests/**/*.csproj'
+            arguments: >
+              --no-build
+              --configuration $(buildConfiguration)
+              "/p:CollectCoverage=true"
+              "/p:CoverletOutputFormat=cobertura"
+              "/p:CoverletOutput=$(Build.SourcesDirectory)/TestResults/"
+            publishTestResults: true
+
+        - script: |
+            echo "Verifying coverage output:"
+            dir $(Build.SourcesDirectory)\TestResults /s /b
+          displayName: 'List TestResults Directory'
+
+        - task: ReportGenerator@5
+          displayName: 'Generate Code Coverage Report'
+          inputs:
+            reports: '$(Build.SourcesDirectory)/TestResults/coverage.cobertura.xml'
+            targetdir: '$(Build.ArtifactStagingDirectory)/CoverageReport'
+            reporttypes: 'HtmlInline_AzurePipelines;Cobertura'
+
+        - task: PublishCodeCoverageResults@2
+          displayName: 'Publish Code Coverage to Azure DevOps'
+          inputs:
+            codeCoverageTool: 'Cobertura'
+            summaryFileLocation: '$(Build.ArtifactStagingDirectory)/CoverageReport/Cobertura.xml'
+
+        - task: SonarCloudAnalyze@3
+          displayName: 'Run SonarCloud Analysis'
+
+        - task: SonarCloudPublish@3
+          displayName: 'Publish SonarCloud Results'
+          inputs:
+            pollingTimeoutSec: '300'

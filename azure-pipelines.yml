@@ -94,8 +94,8 @@ stages:
           - script: |
               echo "Looking for cobertura files..."
               dir $(Build.SourcesDirectory) /s /b | findstr cobertura
-              displayName: 'Debug: Locate cobertura.xml files'
-              continueOnError: true
+            displayName: 'Debug: Locate cobertura.xml files'
+            continueOnError: true
 
           - task: ReportGenerator@5
             displayName: 'Generate Code Coverage Report'

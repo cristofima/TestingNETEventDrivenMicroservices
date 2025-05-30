@@ -5,7 +5,9 @@
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
           <Format>cobertura</Format>
-          <OutputDirectory>$(Build.SourcesDirectory)/TestResults</OutputDirectory>
+          <OutputDirectory>
+            $(Build.SourcesDirectory)/TestResults
+          </OutputDirectory>
         </Configuration>
       </DataCollector>
     </DataCollectors>

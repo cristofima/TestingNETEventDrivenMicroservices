@@ -87,11 +87,11 @@ stages:
               command: 'test'
               projects: '**/tests/**/*.csproj'
               arguments: >
-                --no-build
-                --configuration $(buildConfiguration)
-                --collect:"XPlat Code Coverage"
-                --settings $(Build.SourcesDirectory)/$(runSettingsFile)
-                --results-directory $(Build.SourcesDirectory)/TestResults
+                  --no-build
+                  --configuration $(buildConfiguration)
+                  --collect:"XPlat Code Coverage"
+                  --settings $(Build.SourcesDirectory)/$(runSettingsFile)
+              resultsDirectory: '$(Build.SourcesDirectory)/TestResults'
               publishTestResults: true
 
           - task: PowerShell@2

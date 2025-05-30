@@ -91,15 +91,16 @@ stages:
                 --configuration $(buildConfiguration)
                 --collect:"XPlat Code Coverage"
                 --settings $(Build.SourcesDirectory)/$(runSettingsFile)
+                --results-directory $(Build.SourcesDirectory)/TestResults
               publishTestResults: true
 
           - task: PowerShell@2
-            displayName: 'Debug: List TestResults Contents'
-            inputs:
-              targetType: 'inline'
-              script: |
-                Write-Host "Listing contents of TestResults..."
-                Get-ChildItem -Recurse "$(Build.SourcesDirectory)/TestResults"
+              displayName: 'Debug: List TestResults Contents'
+              inputs:
+                targetType: 'inline'
+                script: |
+                  Write-Host "Listing contents of TestResults..."
+                  Get-ChildItem -Recurse "$(Build.SourcesDirectory)/TestResults"
 
           - task: ReportGenerator@5
             displayName: 'Generate Code Coverage Report'

@@ -4,10 +4,8 @@
     <DataCollectors>
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
-          <Format>cobertura</Format>
-          <OutputDirectory>
-            $(Build.SourcesDirectory)/TestResults
-          </OutputDirectory>
+          <Format>cobertura,opencover</Format>
+          <OutputDirectory>TestResults</OutputDirectory>
         </Configuration>
       </DataCollector>
     </DataCollectors>

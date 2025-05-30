@@ -10,7 +10,6 @@ variables:
   solution: 'EventDrivenMicroservicesSolution.sln'
   testProjects: '**/tests/**/*.csproj'
   coverageOutput: 'TestResults'
-  coverageSettings: 'coverlet.runsettings'
 
 pool:
   vmImage: 'windows-latest'
@@ -84,19 +83,18 @@ stages:
             arguments: >
               --no-build
               --configuration $(buildConfiguration)
-              --settings $(coverageSettings)
+              --settings $(Build.SourcesDirectory)/coverlet.runsettings
             publishTestResults: true
 
         - powershell: |
             Write-Host "Listing contents of TestResults..."
-            Get-ChildItem -Recurse -Path "$(Build.SourcesDirectory)/TestResults" | ForEach-Object { Write-Host $_.FullName }
+            Get-ChildItem -Recurse -Path "$(Build.SourcesDirectory)/TestResults"
           displayName: 'List TestResults Directory'
-          continueOnError: true
 
         - task: ReportGenerator@5
           displayName: 'Generate Code Coverage Report'
           inputs:
-            reports: '$(Build.SourcesDirectory)/TestResults/**/coverage.cobertura.xml'
+            reports: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
             targetdir: '$(Build.ArtifactStagingDirectory)/CoverageReport'
             reporttypes: 'HtmlInline_AzurePipelines;Cobertura'
 

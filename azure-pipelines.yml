@@ -8,6 +8,9 @@ trigger:
 variables:
   buildConfiguration: 'Release'
   solution: 'EventDrivenMicroservicesSolution.sln'
+  runSettingsFile: 'coverlet.runsettings'
+  coverageDirectory: '$(Build.SourcesDirectory)/TestResults'
+  dotnetVersion: '9.x'
 
 stages:
   - stage: Build
@@ -24,8 +27,7 @@ stages:
             displayName: 'Use .NET SDK'
             inputs:
               packageType: 'sdk'
-              version: '9.x'
-              installationPath: $(Agent.ToolsDirectory)/dotnet
+              version: '$(dotnetVersion)'
 
           - task: DotNetCoreCLI@2
             displayName: 'Restore NuGet packages'
@@ -51,7 +53,7 @@ stages:
     dependsOn: Build
     jobs:
       - job: Test
-        displayName: 'Run Tests and Code Coverage'
+        displayName: 'Run Tests and Generate Coverage'
         pool:
           vmImage: 'windows-latest'
         steps:
@@ -65,8 +67,7 @@ stages:
             displayName: 'Use .NET SDK'
             inputs:
               packageType: 'sdk'
-              version: '9.x'
-              installationPath: $(Agent.ToolsDirectory)/dotnet
+              version: '$(dotnetVersion)'
 
           - task: SonarCloudPrepare@3
             displayName: 'Prepare SonarCloud Analysis'
@@ -78,29 +79,31 @@ stages:
               projectName: 'EventDrivenMicroservicesSolution'
               extraProperties: |
                 sonar.exclusions=**/bin/**,**/obj/**
-                sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/TestResults/**/coverage.opencover.xml
+                sonar.cs.opencover.reportsPaths=$(coverageDirectory)/**/*.opencover.xml
 
           - task: DotNetCoreCLI@2
-            displayName: 'Run Tests with Code Coverage'
+            displayName: 'Run All Tests with Coverage'
             inputs:
               command: 'test'
               projects: '**/tests/**/*.csproj'
               arguments: >
-                    --no-build
-                    --configuration $(buildConfiguration)
-                    --collect:"XPlat Code Coverage"
+                --configuration $(buildConfiguration)
+                --no-build
+                --collect:"XPlat Code Coverage"
+                --settings $(Build.SourcesDirectory)/$(runSettingsFile)
               publishTestResults: true
+              resultsDirectory: '$(coverageDirectory)'
 
           - script: |
-              echo "Looking for cobertura files..."
-              dir $(Build.SourcesDirectory) /s /b | findstr cobertura
-            displayName: 'Debug: Locate cobertura.xml files'
+              echo "Verifying generated test coverage files..."
+              dir "$(coverageDirectory)" /s /b
+            displayName: 'Debug: List Coverage Files'
             continueOnError: true
 
           - task: ReportGenerator@5
-            displayName: 'Generate Code Coverage Report'
+            displayName: 'Generate Coverage Report'
             inputs:
-              reports: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
+              reports: '$(coverageDirectory)/**/coverage.cobertura.xml'
               targetdir: '$(Build.ArtifactStagingDirectory)/CoverageReport'
               reporttypes: 'HtmlInline_AzurePipelines;Cobertura'
 

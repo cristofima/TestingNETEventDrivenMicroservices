@@ -8,7 +8,6 @@ trigger:
 variables:
   buildConfiguration: 'Release'
   solution: 'EventDrivenMicroservicesSolution.sln'
-  runSettingsFile: 'coverlet.runsettings'
 
 stages:
   - stage: Build
@@ -87,25 +86,21 @@ stages:
               command: 'test'
               projects: '**/tests/**/*.csproj'
               arguments: >
-                  --no-build
-                  --configuration $(buildConfiguration)
-                  --collect:"XPlat Code Coverage"
-                  --settings $(Build.SourcesDirectory)/$(runSettingsFile)
+                    --no-build
+                    --configuration $(buildConfiguration)
+                    --collect:"XPlat Code Coverage"
               resultsDirectory: '$(Build.SourcesDirectory)/TestResults'
               publishTestResults: true
 
-          - task: PowerShell@2
-            displayName: 'Debug: List TestResults Contents'
-            inputs:
-                targetType: 'inline'
-                script: |
-                  Write-Host "Listing contents of TestResults..."
-                  Get-ChildItem -Recurse "$(Build.SourcesDirectory)/TestResults"
+          - script: |
+                echo "Listing all coverage files..."
+                dir $(Build.SourcesDirectory) /s /b | findstr cobertura
+            displayName: 'Debug: Locate cobertura.xml files'
 
           - task: ReportGenerator@5
             displayName: 'Generate Code Coverage Report'
             inputs:
-              reports: '$(Build.SourcesDirectory)/TestResults/**/coverage.cobertura.xml'
+              reports: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
               targetdir: '$(Build.ArtifactStagingDirectory)/CoverageReport'
               reporttypes: 'HtmlInline_AzurePipelines;Cobertura'
 

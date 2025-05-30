@@ -8,38 +8,28 @@ trigger:
 variables:
   buildConfiguration: 'Release'
   solution: 'EventDrivenMicroservicesSolution.sln'
+  testProjects: '**/tests/**/*.csproj'
+  coverageOutput: 'TestResults'
+  coverageSettings: 'coverlet.runsettings'
 
 pool:
   vmImage: 'windows-latest'
 
 stages:
-# ------------------------
-# 🧱 BUILD STAGE
-# ------------------------
+# === Build Stage ===
 - stage: Build
   displayName: 'Build Stage'
   jobs:
     - job: BuildJob
-      displayName: 'Build Solution'
+      displayName: 'Build Job'
       steps:
+        - checkout: self
+
         - task: UseDotNet@2
           displayName: 'Use .NET SDK'
           inputs:
             packageType: 'sdk'
             version: '9.x'
-            installationPath: $(Agent.ToolsDirectory)/dotnet
-
-        - task: SonarCloudPrepare@3
-          displayName: 'Prepare SonarCloud Analysis'
-          inputs:
-            SonarCloud: 'SonarCloud'
-            organization: '$(SONAR_ORGANIZATION)'
-            scannerMode: 'dotnet'
-            projectKey: '$(SONAR_PROJECT_KEY)'
-            projectName: 'EventDrivenMicroservicesSolution'
-            extraProperties: |
-              sonar.exclusions=**/bin/**,**/obj/**
-              sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/TestResults/coverage.cobertura.xml
 
         - task: DotNetCoreCLI@2
           displayName: 'Restore NuGet packages'
@@ -54,45 +44,59 @@ stages:
             projects: '$(solution)'
             arguments: '--configuration $(buildConfiguration)'
 
-# ------------------------
-# ✅ TEST STAGE
-# ------------------------
-- stage: Test
-  displayName: 'Test & Code Analysis Stage'
+        - publish: '$(Build.SourcesDirectory)'
+          artifact: 'source'
+
+# === Test & Analysis Stage ===
+- stage: TestAndAnalyze
+  displayName: 'Test & SonarCloud Analysis'
   dependsOn: Build
   jobs:
     - job: TestJob
       displayName: 'Run Tests and Code Analysis'
       steps:
+        - download: current
+          artifact: source
+
         - task: UseDotNet@2
           displayName: 'Use .NET SDK'
           inputs:
             packageType: 'sdk'
             version: '9.x'
-            installationPath: $(Agent.ToolsDirectory)/dotnet
+
+        - task: SonarCloudPrepare@3
+          displayName: 'Prepare SonarCloud Analysis'
+          inputs:
+            SonarCloud: 'SonarCloud'
+            organization: '$(SONAR_ORGANIZATION)'
+            scannerMode: 'dotnet'
+            projectKey: '$(SONAR_PROJECT_KEY)'
+            projectName: 'EventDrivenMicroservicesSolution'
+            extraProperties: |
+              sonar.exclusions=**/bin/**,**/obj/**
+              sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/TestResults/**/coverage.opencover.xml
 
         - task: DotNetCoreCLI@2
           displayName: 'Run Tests with Code Coverage'
           inputs:
             command: 'test'
-            projects: '**/tests/**/*.csproj'
+            projects: '$(testProjects)'
             arguments: >
               --no-build
               --configuration $(buildConfiguration)
-              "/p:CollectCoverage=true"
-              "/p:CoverletOutputFormat=cobertura"
-              "/p:CoverletOutput=$(Build.SourcesDirectory)/TestResults/"
+              --settings $(coverageSettings)
             publishTestResults: true
 
-        - script: |
-            echo "Verifying coverage output:"
-            dir $(Build.SourcesDirectory)\TestResults /s /b
+        - powershell: |
+            Write-Host "Listing contents of TestResults..."
+            Get-ChildItem -Recurse -Path "$(Build.SourcesDirectory)/TestResults" | ForEach-Object { Write-Host $_.FullName }
           displayName: 'List TestResults Directory'
+          continueOnError: true
 
         - task: ReportGenerator@5
           displayName: 'Generate Code Coverage Report'
           inputs:
-            reports: '$(Build.SourcesDirectory)/TestResults/coverage.cobertura.xml'
+            reports: '$(Build.SourcesDirectory)/TestResults/**/coverage.cobertura.xml'
             targetdir: '$(Build.ArtifactStagingDirectory)/CoverageReport'
             reporttypes: 'HtmlInline_AzurePipelines;Cobertura'
 

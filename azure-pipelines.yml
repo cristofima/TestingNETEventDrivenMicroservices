@@ -89,13 +89,13 @@ stages:
                     --no-build
                     --configuration $(buildConfiguration)
                     --collect:"XPlat Code Coverage"
-              resultsDirectory: '$(Build.SourcesDirectory)/TestResults'
               publishTestResults: true
 
           - script: |
-                echo "Listing all coverage files..."
-                dir $(Build.SourcesDirectory) /s /b | findstr cobertura
-            displayName: 'Debug: Locate cobertura.xml files'
+              echo "Looking for cobertura files..."
+              dir $(Build.SourcesDirectory) /s /b | findstr cobertura
+              displayName: 'Debug: Locate cobertura.xml files'
+              continueOnError: true
 
           - task: ReportGenerator@5
             displayName: 'Generate Code Coverage Report'

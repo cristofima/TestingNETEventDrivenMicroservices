@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <CollectCoverage>true</CollectCoverage>
-        <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+        <CoverletOutputFormat>cobertura,opencover</CoverletOutputFormat>
         <CoverletOutput>$(OutputPath)coverage.</CoverletOutput>
     </PropertyGroup>
 

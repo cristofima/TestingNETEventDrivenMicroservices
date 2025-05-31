@@ -7,21 +7,14 @@ using OrderService.Domain.Interfaces;
 
 namespace OrderService.Application.Handlers;
 
-public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Guid>
+public class CreateOrderCommandHandler(
+    IOrderRepository orderRepository,
+    IMediator mediator,
+    ILogger<CreateOrderCommandHandler> logger) : IRequestHandler<CreateOrderCommand, Guid>
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IMediator _mediator; // For publishing domain events
-    private readonly ILogger<CreateOrderCommandHandler> _logger;
-
-    public CreateOrderCommandHandler(
-        IOrderRepository orderRepository,
-        IMediator mediator,
-        ILogger<CreateOrderCommandHandler> logger)
-    {
-        _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
-        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IOrderRepository _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
+    private readonly IMediator _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator)); // For publishing domain events
+    private readonly ILogger<CreateOrderCommandHandler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<Guid> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {

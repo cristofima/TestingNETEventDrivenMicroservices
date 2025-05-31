@@ -6,21 +6,14 @@ using OrderService.Domain.Interfaces;
 
 namespace OrderService.Application.Handlers;
 
-public class ProcessOrderCommandHandler : IRequestHandler<ProcessOrderCommand, bool>
+public class ProcessOrderCommandHandler(
+    IOrderRepository orderRepository,
+    IMediator mediator,
+    ILogger<ProcessOrderCommandHandler> logger) : IRequestHandler<ProcessOrderCommand, bool>
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IMediator _mediator;
-    private readonly ILogger<ProcessOrderCommandHandler> _logger;
-
-    public ProcessOrderCommandHandler(
-        IOrderRepository orderRepository,
-        IMediator mediator,
-        ILogger<ProcessOrderCommandHandler> logger)
-    {
-        _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
-        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IOrderRepository _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
+    private readonly IMediator _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+    private readonly ILogger<ProcessOrderCommandHandler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<bool> Handle(ProcessOrderCommand request, CancellationToken cancellationToken)
     {

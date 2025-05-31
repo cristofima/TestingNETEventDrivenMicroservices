@@ -23,7 +23,7 @@ steps:
   - task: SonarQubePrepare@7
     displayName: 'Prepare SonarCloud Analysis'
     inputs:
-      SonarQube: 'SonarCloud'
+      SonarQube: 'SonarQube'
       organization: '$(SONAR_ORGANIZATION)'
       scannerMode: 'dotnet'
       projectKey: '$(SONAR_PROJECT_KEY)'

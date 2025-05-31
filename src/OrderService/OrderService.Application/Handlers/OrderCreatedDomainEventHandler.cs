@@ -10,16 +10,10 @@ namespace OrderService.Application.Handlers;
 /// Handles the OrderCreatedDomainEvent (an internal domain event).
 /// Its responsibility is to publish an OrderCreatedIntegrationEvent to the external message bus.
 /// </summary>
-public class OrderCreatedDomainEventHandler : INotificationHandler<OrderCreatedDomainEvent>
+public class OrderCreatedDomainEventHandler(IEventPublisher eventPublisher, ILogger<OrderCreatedDomainEventHandler> logger) : INotificationHandler<OrderCreatedDomainEvent>
 {
-    private readonly IEventPublisher _eventPublisher;
-    private readonly ILogger<OrderCreatedDomainEventHandler> _logger;
-
-    public OrderCreatedDomainEventHandler(IEventPublisher eventPublisher, ILogger<OrderCreatedDomainEventHandler> logger)
-    {
-        _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IEventPublisher _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
+    private readonly ILogger<OrderCreatedDomainEventHandler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task Handle(OrderCreatedDomainEvent notification, CancellationToken cancellationToken)
     {

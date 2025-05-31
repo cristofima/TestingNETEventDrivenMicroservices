@@ -6,16 +6,10 @@ using SharedKernel.Events;
 
 namespace OrderService.Application.Handlers;
 
-public class OrderProcessedDomainEventHandler : INotificationHandler<OrderProcessedDomainEvent>
+public class OrderProcessedDomainEventHandler(IEventPublisher eventPublisher, ILogger<OrderProcessedDomainEventHandler> logger) : INotificationHandler<OrderProcessedDomainEvent>
 {
-    private readonly IEventPublisher _eventPublisher;
-    private readonly ILogger<OrderProcessedDomainEventHandler> _logger;
-
-    public OrderProcessedDomainEventHandler(IEventPublisher eventPublisher, ILogger<OrderProcessedDomainEventHandler> logger)
-    {
-        _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IEventPublisher _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
+    private readonly ILogger<OrderProcessedDomainEventHandler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task Handle(OrderProcessedDomainEvent notification, CancellationToken cancellationToken)
     {

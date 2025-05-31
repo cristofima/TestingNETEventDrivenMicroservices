@@ -6,20 +6,11 @@ using SharedKernel.Events;
 
 namespace OrderService.Application.Handlers;
 
-public class OrderCancelledDomainEventHandler : INotificationHandler<OrderCancelledDomainEvent>
+public class OrderCancelledDomainEventHandler(IEventPublisher eventPublisher, ILogger<OrderCancelledDomainEventHandler> logger) : INotificationHandler<OrderCancelledDomainEvent>
 {
-    private readonly IEventPublisher _eventPublisher;
-    private readonly ILogger<OrderCancelledDomainEventHandler> _logger;
-
-    public OrderCancelledDomainEventHandler(IEventPublisher eventPublisher, ILogger<OrderCancelledDomainEventHandler> logger)
-    {
-        _eventPublisher = eventPublisher;
-        _logger = logger;
-    }
-
     public async Task Handle(OrderCancelledDomainEvent notification, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Handling OrderCancelledDomainEvent for OrderId: {OrderId}. Publishing integration event...", notification.Order.Id);
+        logger.LogInformation("Handling OrderCancelledDomainEvent for OrderId: {OrderId}. Publishing integration event...", notification.Order.Id);
         var integrationEvent = new OrderCancelledIntegrationEvent(
             notification.Order.Id,
             notification.CancelledDate,
@@ -28,12 +19,12 @@ public class OrderCancelledDomainEventHandler : INotificationHandler<OrderCancel
 
         try
         {
-            await _eventPublisher.PublishAsync(integrationEvent, cancellationToken);
-            _logger.LogInformation("OrderCancelledIntegrationEvent published for OrderId: {OrderId}", notification.Order.Id);
+            await eventPublisher.PublishAsync(integrationEvent, cancellationToken);
+            logger.LogInformation("OrderCancelledIntegrationEvent published for OrderId: {OrderId}", notification.Order.Id);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error publishing OrderCancelledIntegrationEvent for OrderId: {OrderId}", notification.Order.Id);
+            logger.LogError(ex, "Error publishing OrderCancelledIntegrationEvent for OrderId: {OrderId}", notification.Order.Id);
             throw;
         }
     }
